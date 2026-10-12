@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keepsake — Notes that remember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f3ec;
+    --paper:#fffdf8;
+    --ink:#2b2a26;
+    --muted:#7c786d;
+    --accent:#c0613a;
+    --accent-soft:#f0d9cb;
+    --line:#e7e1d4;
+    --shadow:0 6px 24px rgba(60,50,30,.09);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;line-height:1.2}
+
+  /* Header */
+  header{
+    padding:clamp(28px,6vw,56px) 20px clamp(20px,4vw,36px);
+    text-align:center;
+    background:linear-gradient(180deg,#fbf6ec 0%,var(--bg) 100%);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px}
+  .brand .mark{
+    width:44px;height:44px;border-radius:12px;
+    background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-size:24px;
+    box-shadow:var(--shadow);
+  }
+  header h1{font-size:clamp(2rem,6vw,3.2rem);color:var(--ink)}
+  header p{color:var(--muted);max-width:540px;margin:8px auto 0;font-size:1.05rem}
+  .saved-pill{
+    display:inline-flex;align-items:center;gap:7px;
+    margin-top:16px;padding:6px 14px;border-radius:999px;
+    background:var(--paper);border:1px solid var(--line);
+    font-size:.85rem;color:var(--muted);transition:.3s;
+  }
+  .saved-pill .dot{width:8px;height:8px;border-radius:50%;background:#bdbab0;transition:.3s}
+  .saved-pill.saving .dot{background:#e0a33c}
+  .saved-pill.saved .dot{background:#5a9e5a}
+
+  main{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+
+  /* Composer */
+  .composer{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    padding:20px;
+    margin-bottom:30px;
+  }
+  .composer input.title{
+    width:100%;border:none;background:transparent;
+    font-family:'Fraunces',serif;font-size:1.35rem;font-weight:600;color:var(--ink);
+    padding:4px 2px;margin-bottom:6px;
+  }
+  .composer input.title::placeholder{color:#bbb6a9}
+  .composer textarea{
+    width:100%;border:none;background:transparent;resize:vertical;
+    font-family:'Inter',sans-serif;font-size:1rem;color:var(--ink);
+    min-height:84px;padding:4px 2px;line-height:1.6;
+  }
+  .composer textarea::placeholder{color:#bbb6a9}
+  .composer input:focus,.composer textarea:focus{outline:none}
+  .composer .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:8px;border-top:1px dashed var(--line);padding-top:14px}
+  .swatches{display:flex;gap:8px}
+  .swatch{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+    transition:transform .15s;
+  }
+  .swatch:hover{transform:scale(1.12)}
+  .swatch[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:.95rem;
+    border:none;border-radius:11px;padding:12px 22px;cursor:pointer;
+    min-height:44px;transition:.2s;
+  }
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#a84f2d}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+  /* Toolbar */
+  .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:22px}
+  .search{
+    flex:1;min-width:200px;display:flex;align-items:center;gap:9px;
+    background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:0 14px;
+  }
+  .search input{border:none;background:transparent;padding:12px 0;width:100%;font-size:.95rem;color:var(--ink)}
+  .search input:focus{outline:none}
+  .count{color:var(--muted);font-size:.9rem;white-space:nowrap}
+
+  /* Notes grid */
+  .grid{
+    display:grid;gap:16px;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    align-items:start;
+  }
+  .note{
+    border-radius:16px;padding:18px;border:1px solid rgba(0,0,0,.05);
+    box-shadow:var(--shadow);position:relative;
+    display:flex;flex-direction:column;gap:8px;
+    animation:pop .3s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .note h3{font-size:1.15rem;word-break:break-word}
+  .note .body{white-space:pre-wrap;word-break:break-word;font-size:.95rem;color:#44423b;flex:1}
+  .note .meta{font-size:.78rem;color:var(--muted);margin-top:4px}
+  .note .actions{display:flex;gap:6px;margin-top:6px}
+  .note .actions button{
+    background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.06);
+    border-radius:8px;cursor:pointer;font-size:.82rem;padding:7px 11px;min-height:38px;
+    color:#44423b;transition:.15s;
+  }
+  .note .actions button:hover{background:#fff}
+  .note .actions .del:hover{color:var(--accent)}
+  .pin{position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;font-size:1.1rem;opacity:.35;transition:.15s}
+  .pin:hover{opacity:.8}
+  .pin.on{opacity:1}
+
+  .empty{
+    text-align:center;padding:60px 20px;color:var(--muted);
+    border:2px dashed var(--line);border-radius:18px;
+  }
+  .empty .big{font-size:2.4rem;margin-bottom:10px}
+
+  /* Pay */
+  .sell{margin:50px auto 0;max-width:620px;text-align:center}
+  .sell h2{font-size:1.6rem;margin-bottom:6px}
+  .sell p{color:var(--muted);margin-bottom:18px}
+  [data-factory-pay]{display:grid;gap:12px}
+  .factory-pay-item{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 20px;text-align:left;
+  }
+  .factory-pay-name{font-weight:600}
+  .factory-pay-price{color:var(--accent);font-weight:600}
+  .factory-pay-btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 20px;min-height:44px;cursor:pointer;font-weight:600}
+  .factory-pay-btn:hover{background:#a84f2d}
+
+  /* How it works */
+  .how{max-width:780px;margin:56px auto 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:28px}
+  .how h2{font-size:1.5rem;margin-bottom:14px}
+  .how ol{padding-left:20px;color:#44423b}
+  .how li{margin-bottom:9px}
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:36px 20px}
+
+  @media(max-width:480px){
+    .composer .row{flex-direction:column;align-items:stretch}
+    .composer .row .btn-primary{width:100%}
+  }
+</style>
+<script id="factory-store-sdk">
+window.factory=(function(){
+var K="e091f378-4171-4e52-af44-3dac14fabb6b",U="https://canvbkibjgcnqowjtarf.supabase.co/functions/v1/app-market",A="sb_publishable_sMTQKIeFgT1vwjHnU7Gexg_8CCmhtxs";
+function call(b){b.appKey=K;return fetch(U,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+A},body:JSON.stringify(b)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||("store "+r.status));return d;});});}
+var S={
+put:function(c,i,d){return call({op:"put",collection:c,id:String(i),data:d}).then(function(x){return x.doc?x.doc.data:null;});},
+get:function(c,i){return call({op:"get",collection:c,id:String(i)}).then(function(x){return x.doc?x.doc.data:null;});},
+list:function(c){return call({op:"list",collection:c}).then(function(x){return x.docs.map(function(d){return d.data;});});},
+remove:function(c,i){return call({op:"delete",collection:c,id:String(i)}).then(function(){return true;});},
+unlock:function(code){return call({op:"redeem",code:String(code)}).then(function(x){try{localStorage.setItem("factory_access",x.status);}catch(e){}return x.status;});},
+access:function(){try{return localStorage.getItem("factory_access")||"none";}catch(e){return "none";}}
+};
+var _c=null;try{var h=(location.hash||"").match(/factory_code=([a-z0-9-]+)/i);_c=h?h[1]:localStorage.getItem("factory_code");if(h){history.replaceState(null,"",location.pathname+location.search);}}catch(e){}
+var F={put:S.put,get:S.get,list:S.list,remove:S.remove,unlock:S.unlock,access:S.access};
+F.ready=_c?S.unlock(_c).then(function(s){try{if(s!=="invalid")localStorage.setItem("factory_code",_c);}catch(e){}return s;}).catch(function(){return S.access();}):Promise.resolve(S.access());
+return F;})();
+</script>
+<script id="factory-pay-sdk">
+(function(){var s=document.createElement("script");s.src="https://canvbkibjgcnqowjtarf.supabase.co/functions/v1/app-pay?sdk=1&repo=make-me-a-32t7&v="+Math.floor(Date.now()/300000);s.async=true;document.head.appendChild(s);})();
+</script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark" aria-hidden="true">✦</div>
+  </div>
+  <h1>Keepsake</h1>
+  <p>A calm place for your thoughts. Every note is saved to the cloud the moment you write it — and remembered the next time you return, on any device.</p>
+  <div class="saved-pill" id="savedPill"><span class="dot"></span><span id="savedText">Ready</span></div>
+</header>
+
+<main>
+  <!-- Composer -->
+  <section class="composer" aria-label="Write a new note">
+    <input class="title" id="noteTitle" type="text" placeholder="Give it a title…" aria-label="Note title">
+    <textarea id="noteBody" placeholder="Write whatever you want to remember…" aria-label="Note text"></textarea>
+    <div class="row">
+      <div class="swatches" role="group" aria-label="Choose a colour">
+        <!-- swatches injected -->
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" id="clearBtn" type="button">Clear</button>
+        <button class="btn btn-primary" id="addBtn" type="button">Keep note</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <label class="search">
+      <span aria-hidden="true">🔍</span>
+      <input id="searchInput" type="search" placeholder="Search your notes…" aria-label="Search notes">
+    </label>
+    <span class="count" id="count">0 notes</span>
+  </div>
+
+  <!-- Notes -->
+  <section class="grid" id="grid" aria-live="polite"></section>
+  <div class="empty" id="empty" hidden>
+    <div class="big" aria-hidden="true">🌿</div>
+    <p id="emptyMsg">No notes yet. Write your first one above — it’ll be here whenever you come back.</p>
+  </div>
+
+  <!-- Sell -->
+  <section class="sell">
+    <h2>Support Keepsake</h2>
+    <p>If this little notebook earns a place in your day, here’s how you can help it grow.</p>
+    <div data-factory-pay></div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <h2>How it works</h2>
+    <ol>
+      <li><strong>Write freely.</strong> Add a title and your note, pick a colour that fits the mood, then press <em>Keep note</em>.</li>
+      <li><strong>It remembers.</strong> Every note is saved to Keepsake’s permanent cloud store the instant you keep or edit it — watch the little dot turn green.</li>
+      <li><strong>Pin what matters.</strong> Tap the pin on any note to float it to the top of your collection.</li>
+      <li><strong>Find anything.</strong> Use the search box to filter by title or text as you type.</li>
+      <li><strong>Come back anytime.</strong> Open Keepsake on any device and your notes load straight from the cloud — nothing is lost.</li>
+    </ol>
+  </section>
+</main>
+
+<footer>Made with care · Your notes are kept safely and loaded fresh each visit.</footer>
+
+<script>
+  // ---- Factory storage fallback (so it works while previewing too) ----
+  const store = (function(){
+    if(window.factory && factory.list) return factory;
+    const k="keepsake_fallback";
+    const read=()=>JSON.parse(localStorage.getItem(k)||"{}");
+    const write=o=>localStorage.setItem(k,JSON.stringify(o));
+    return {
+      async put(c,id,doc){const o=read();o[c]=o[c]||{};o[c][id]={...doc,id};write(o);},
+      async get(c,id){return (read()[c]||{})[id]||null;},
+      async list(c){const m=read()[c]||{};return Object.values(m).sort((a,b)=>b.id.localeCompare(a.id));},
+      async remove(c,id){const o=read();if(o[c])delete o[c][id];write(o);}
+    };
+  })();
+
+  const COLORS=[
+    {name:"Sand",v:"#fffdf8"},
+    {name:"Blush",v:"#fbe3dc"},
+    {name:"Sky",v:"#dcebf4"},
+    {name:"Sage",v:"#dcecdc"},
+    {name:"Lilac",v:"#e8e0f2"},
+    {name:"Butter",v:"#faeecb"},
+  ];
+  let chosenColor=COLORS[0].v;
+  let notes=[];
+
+  const $=s=>document.querySelector(s);
+  const grid=$("#grid"), empty=$("#empty"), countEl=$("#count"), searchInput=$("#searchInput");
+  const pill=$("#savedPill"), pillText=$("#savedText");
+
+  // Build swatches
+  const sw=document.querySelector(".swatches");
+  COLORS.forEach((c,i)=>{
+    const b=document.createElement("button");
+    b.type="button";b.className="swatch";b.style.background=c.v;
+    b.title=c.name;b.setAttribute("aria-label","Colour: "+c.name);
+    b.setAttribute("aria-pressed", i===0?"true":"false");
+    b.onclick=()=>{chosenColor=c.v;document.querySelectorAll(".swatch").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");};
+    sw.appendChild(b);
+  });
+
+  function showSaving(){pill.className="saved-pill saving";pillText.textContent="Saving…";}
+  function showSaved(){pill.className="saved-pill saved";pillText.textContent="Saved to cloud";
+    clearTimeout(showSaved._t);showSaved._t=setTimeout(()=>{pill.className="saved-pill";pillText.textContent="All changes saved";},1600);}
+
+  function esc(s){return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+  function fmt(ts){const d=new Date(Number(ts));return d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});}
+
+  async function load(){
+    try{
+      notes=await store.list("notes");
+    }catch(e){notes=[];}
+    render();
+  }
+
+  function render(){
+    const q=searchInput.value.trim().toLowerCase();
+    let list=notes.slice();
+    if(q) list=list.filter(n=>((n.title||"")+" "+(n.body||"")).toLowerCase().includes(q));
+    list.sort((a,b)=>{
+      if(!!b.pinned - !!a.pinned) return (b.pinned?1:0)-(a.pinned?1:0);
+      return String(b.id).localeCompare(String(a.id));
+    });
+
+    countEl.textContent = notes.length + (notes.length===1?" note":" notes");
+    grid.innerHTML="";
+    if(list.length===0){
+      empty.hidden=false;
+      $("#emptyMsg").textContent = notes.length===0
+        ? "No notes yet. Write your first one above — it’ll be here whenever you come back."
+        : "No notes match “"+searchInput.value.trim()+"”.";
+      return;
+    }
+    empty.hidden=true;
+
+    list.forEach(n=>{
+      const el=document.createElement("article");
+      el.className="note";
+      el.style.background=n.color||"#fffdf8";
+      el.innerHTML=`
+        <button class="pin ${n.pinned?'on':''}" title="${n.pinned?'Unpin':'Pin to top'}" aria-label="${n.pinned?'Unpin note':'Pin note'}">${n.pinned?'📌':'📍'}</button>
+        ${n.title?`<h3>${esc(n.title)}</h3>`:""}
+        ${n.body?`<div class="body">${esc(n.body)}</div>`:""}
+        <div class="meta">${fmt(n.id)}</div>
+        <div class="actions">
+          <button class="edit" aria-label="Edit note">Edit</button>
+          <button class="del" aria-label="Delete note">Delete</button>
+        </div>`;
+      el.querySelector(".pin").onclick=()=>togglePin(n);
+      el.querySelector(".edit").onclick=()=>editNote(n);
+      el.querySelector(".del").onclick=()=>delNote(n);
+      grid.appendChild(el);
+    });
+  }
+
+  async function addNote(){
+    const title=$("#noteTitle").value.trim();
+    const body=$("#noteBody").value.trim();
+    if(!title && !body){$("#noteBody").focus();return;}
+    const note={id:String(Date.now()),title,body,color:chosenColor,pinned:false};
+    notes.unshift(note);
+    render();
+    $("#noteTitle").value="";$("#noteBody").value="";
+    showSaving();
+    try{await store.put("notes",note.id,note);showSaved();}
+    catch(e){pillText.textContent="Couldn’t save — try again";}
+  }
+
+  async function delNote(n){
+    if(!confirm("Delete this note? This can’t be undone.")) return;
+    notes=notes.filter(x=>x.id!==n.id);
+    render();
+    showSaving();
+    try{await store.remove("notes",n.id);showSaved();}catch(e){}
+  }
+
+  async function togglePin(n){
+    n.pinned=!n.pinned;
+    render();
+    showSaving();
+    try{await store.put("notes",n.id,n);showSaved();}catch(e){}
+  }
+
+  function editNote(n){
+    $("#noteTitle").value=n.title||"";
+    $("#noteBody").value=n.body||"";
+    chosenColor=n.color||COLORS[0].v;
+    document.querySelectorAll(".swatch").forEach((x,i)=>x.setAttribute("aria-pressed", COLORS[i].v===chosenColor?"true":"false"));
+    // remove original; keeping becomes an updated note
+    notes=notes.filter(x=>x.id!==n.id);
+    store.remove("notes",n.id).catch(()=>{});
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+    $("#noteTitle").focus();
+  }
+
+  $("#addBtn").onclick=addNote;
+  $("#clearBtn").onclick=()=>{$("#noteTitle").value="";$("#noteBody").value="";};
+  $("#noteBody").addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")addNote();});
+  searchInput.addEventListener("input",render);
+
+  load();
+</script>
+<div id="factory-provenance" style="padding:14px 16px;text-align:center;font:11px/1.7 system-ui,sans-serif;color:#888;opacity:.85;">&#9874; Built with <a href="https://thefactory.refereeinnovations.com" style="color:#888;">The Factory</a> using third-party AI tools &#183; the app owner is responsible for its content &#183; Standard: UK law, aligned with the UN Universal Declaration of Human Rights &#183; <a href="https://thefactory.refereeinnovations.com/terms.html" style="color:#888;">Terms</a></div>
+</body>
+</html>
